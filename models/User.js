@@ -12,18 +12,24 @@ const userSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      match: /^\S+@\S+\.\S+$/
+      match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     },
     thoughts: [{
       type: Schema.Types.ObjectId,
       ref: 'Thought' 
     }],
-    friends: [{
-      type: Schema.Types.ObjectId,
-      ref: 'User' 
-    }]
+    friends: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User' 
+    }
+  ]
   }
 )
+
+userSchema.virtual('friendCount').get(function() {
+  return this.friends.length;
+});
 
 const User = model('user', userSchema)
 
