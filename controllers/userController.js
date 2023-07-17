@@ -12,7 +12,7 @@ module.exports = {
     }
   },
   // POST method for creating a new user.
-  aync postNewUser(req, res) {
+  async postNewUser(req, res) {
     try {
       const newUser = await User.create(req.body);
       res.json(newUser);
