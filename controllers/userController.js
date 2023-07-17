@@ -12,5 +12,15 @@ module.exports = {
     }
   },
 
-  
+  // POST method for creating a new user.
+  aync postNewUser(req, res) {
+    try {
+      const newUser = await User.create(req.body);
+      res.json(newUser);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json(err);
+    }
+  },
+
 }
