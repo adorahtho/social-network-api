@@ -11,7 +11,6 @@ module.exports = {
       res.status(500).json(err);
     }
   },
-
   // POST method for creating a new user.
   aync postNewUser(req, res) {
     try {
