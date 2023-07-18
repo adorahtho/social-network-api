@@ -18,11 +18,12 @@ const names = [
   'Thao',
 ]
 
-const randomThoughts = []
-
 // Get a random item given an array
 const getRandomArrItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 // Gets a random full name
 const getRandomUsername = () =>
   `${getRandomArrItem(names)}${Math.floor(Math.random() * 900) + 100}`;
+
+  
+module.exports = { getRandomUsername }
