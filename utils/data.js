@@ -25,5 +25,10 @@ const getRandomArrItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const getRandomUsername = () =>
   `${getRandomArrItem(names)}${Math.floor(Math.random() * 900) + 100}`;
 
-  
-module.exports = { getRandomUsername }
+const getRandomThoughtText = () =>
+  `This is random thought number ${Math.floor(Math.random() * 200) + 1}`
+
+const getRandomReaction = () =>
+  `Random reaction number ${Math.floor(Math.random() * 200) + 1}`
+
+module.exports = { getRandomUsername, getRandomThoughtText, getRandomReaction }
