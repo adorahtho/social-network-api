@@ -1,100 +1,79 @@
 const connection = require('../config/connection');
 const { User, Thought } = require('../models');
-const { getRandomUsername, getRandomThoughtText, getRandomReaction } = require('./data');
+const { getRandomArrItem, getRandomUsername, getRandomThoughtText, getRandomReaction } = require('./data');
 const mongoose = require('mongoose');
 
-connection.on('error', (err) => err);
+connection.on('error', (err) => console.error('Error connecting to the database:', err));
 
 connection.once('open', async () => {
-  console.log('connected');
-  // Delete the collections if they exist
-  let userCheck = await connection.db.listCollections({ name: 'users' }).toArray();
-  if (userCheck.length) {
-    await connection.dropCollection('users');
-  }
+  try {
+    console.log('Connected to the database');
 
-  let thoughtCheck = await connection.db.listCollections({ name: 'thoughts' }).toArray();
-  if (thoughtCheck.length) {
-    await connection.dropCollection('thoughts');
-  }
+    // Delete existing collections
+    await Promise.all([
+      User.deleteMany({}),
+      Thought.deleteMany({}),
+    ]);
 
-  const usersData = [];
-  const allUsernames = new Set();
+    // Generate and insert users
+    const usersData = [];
+    while (usersData.length < 20) {
+      let username = getRandomUsername();
+      const email = `${username}@example.com`;
 
-  for (let i = 0; i < 20; i++) {
-    let username;
-    do {
-      username = getRandomUsername();
-    } while (allUsernames.has(username));
-    allUsernames.add(username);
-
-    const email = `${username}@email.com`;
-
-    usersData.push({
-      username,
-      email,
-      thoughts: [],
-      friends: [], 
-    });
-  }
-
-  const thoughtsData = [];
-  for (const user of usersData) {
-    const thoughtText = getRandomThoughtText();
-    const createdAt = new Date();
-    const thought = {
-      _id: new mongoose.Types.ObjectId(),
-      thoughtText,
-      createdAt,
-      username: user.username,
-      reactions: [],
-    };
-    thoughtsData.push(thought);
-  }
-
-  await Thought.collection.insertMany(thoughtsData);
-
-  for (const user of usersData) {
-    const userThoughts = thoughtsData.filter((thought) => thought.username === user.username);
-    user.thoughts.push(...userThoughts);
-
-    const friendsCount = Math.min(Math.floor(Math.random() * 5), usersData.length - 1);
-    const otherUsers = usersData.filter((u) => u.username !== user.username);
-    for (let i = 0; i < friendsCount; i++) {
-      const randomIndex = Math.floor(Math.random() * otherUsers.length);
-      const friendId = otherUsers[randomIndex]._id;
-      const friendUsername = otherUsers[randomIndex].username;
-      user.friends.push({ _id: friendId, username: friendUsername });
-      otherUsers.splice(randomIndex, 1);
+      usersData.push({
+        username,
+        email,
+        thoughts: [],
+      });
     }
-  }
+    const createdUsers = await User.insertMany(usersData);
 
-  for (const user of usersData) {
-    for (const thought of user.thoughts) {
-      const reactionCount = Math.floor(Math.random() * 5);
-      const reactionsData = []; 
-      for (let i = 0; i < reactionCount; i++) {
-        const reactionBody = getRandomReaction();
-        const createdAt = new Date();
-        const randomUserIndex = Math.floor(Math.random() * usersData.length);
-        const randomUser = usersData[randomUserIndex];
-        const reaction = {
-          _id: new mongoose.Types.ObjectId(),
-          reactionBody,
-          username: randomUser.username, 
-          createdAt,
-        };
-        thought.reactions.push(reaction); 
-        reactionsData.push(reaction); 
+    // Generate and insert thoughts
+    const thoughtsData = [];
+    for (const user of createdUsers) {
+      for (let i = 0; i < 3; i++) {
+        const thoughtText = getRandomThoughtText();
+        const thought = new Thought({ thoughtText, username: user.username });
+        thoughtsData.push(thought);
+        user.thoughts.push(thought._id); // Push the thought _id into user's thoughts array
       }
-  
-      await Thought.collection.updateOne({ _id: thought._id }, { $push: { reactions: { $each: reactionsData } } });
     }
+    await Thought.insertMany(thoughtsData);
+
+    // Generate and insert reactions
+    for (const thought of thoughtsData) {
+      const reactionsData = [];
+      for (let i = 0; i < 3; i++) {
+        const reactionBody = getRandomReaction();
+        const username = createdUsers[Math.floor(Math.random() * createdUsers.length)].username;
+        reactionsData.push({
+          reactionBody,
+          username,
+          thoughtId: thought._id,
+        });
+      }
+      await Thought.collection.updateOne({ _id: thought._id }, { $set: { reactions: reactionsData } });
+    }
+
+    // Generate and insert friends
+    for (const user of createdUsers) {
+      const friendsCount = Math.min(Math.floor(Math.random() * 4) + 1, createdUsers.length - 1);
+      const otherUsers = createdUsers.filter((u) => u.username !== user.username);
+
+      for (let i = 0; i < friendsCount; i++) {
+        const randomFriend = getRandomArrItem(otherUsers);
+        user.friends.push(randomFriend._id); // Push only the _id value
+        otherUsers.splice(otherUsers.indexOf(randomFriend), 1);
+      }
+      await user.save();
+    }
+
+    console.log('Seeding completed successfully');
+  } catch (err) {
+    console.error('Error seeding the database:', err);
+  } finally {
+    connection.close();
+    process.exit(0);
   }
-
-  await User.collection.insertMany(usersData);
-
-  console.table(usersData);
-  console.info('Seeding complete! 🌱');
-  process.exit(0);
 });

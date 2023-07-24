@@ -31,4 +31,6 @@ const getRandomThoughtText = () =>
 const getRandomReaction = () =>
   `Random reaction number ${Math.floor(Math.random() * 200) + 1}`
 
-module.exports = { getRandomUsername, getRandomThoughtText, getRandomReaction }
+
+
+module.exports = { getRandomArrItem, getRandomUsername, getRandomThoughtText, getRandomReaction }

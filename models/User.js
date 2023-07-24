@@ -24,14 +24,17 @@ const userSchema = new Schema(
     }],
   },
   {
-    // Use the toObject() method with the transform option
     toJSON: {
-      transform: function (doc, ret) {
-        delete ret._id; // Remove _id field from the nested objects
-      },
+      virtuals: true,
     },
+    id: false,
   }
-)
+);
+
+userSchema.pre('save', function(next) {
+  this.friends = this.friends || [];
+  next();
+});
 
 userSchema.virtual('friendCount').get(function() {
   return this.friends.length;
