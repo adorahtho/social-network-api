@@ -1,6 +1,6 @@
-const connection = require('../config/connection')
-const { User, Thought } = require('../models')
-const { getRandomUsername, getRandomThoughtText, getRandomReaction } = require('./data')
+const connection = require('../config/connection');
+const { User, Thought } = require('../models');
+const { getRandomUsername, getRandomThoughtText, getRandomReaction } = require('./data');
 const mongoose = require('mongoose');
 
 connection.on('error', (err) => err);
@@ -8,25 +8,25 @@ connection.on('error', (err) => err);
 connection.once('open', async () => {
   console.log('connected');
   // Delete the collections if they exist
-  let userCheck = await connection.db.listCollections({ name: 'users'}).toArray()
+  let userCheck = await connection.db.listCollections({ name: 'users' }).toArray();
   if (userCheck.length) {
-    await connection.dropCollection('users')
+    await connection.dropCollection('users');
   }
 
-  let thoughtCheck = await connection.db.listCollections({ name: 'thoughts'}).toArray()
+  let thoughtCheck = await connection.db.listCollections({ name: 'thoughts' }).toArray();
   if (thoughtCheck.length) {
-    await connection.dropCollection('thoughts')
+    await connection.dropCollection('thoughts');
   }
 
   const usersData = [];
   const allUsernames = new Set();
 
   for (let i = 0; i < 20; i++) {
-    let username
+    let username;
     do {
-      username = getRandomUsername()
-    } while (allUsernames.has(username))
-    allUsernames.add(username)
+      username = getRandomUsername();
+    } while (allUsernames.has(username));
+    allUsernames.add(username);
 
     const email = `${username}@email.com`;
 
@@ -34,22 +34,21 @@ connection.once('open', async () => {
       username,
       email,
       thoughts: [],
-      friends: [],
-    })
+      friends: [], 
+    });
   }
 
-  const thoughtsData = []
+  const thoughtsData = [];
   for (const user of usersData) {
     const thoughtText = getRandomThoughtText();
-    const createdAt = new Date()
-    const reactions = getRandomReaction(); 
+    const createdAt = new Date();
     const thought = {
       _id: new mongoose.Types.ObjectId(),
       thoughtText,
       createdAt,
       username: user.username,
-      reactions,
-    }
+      reactions: [],
+    };
     thoughtsData.push(thought);
   }
 
@@ -64,17 +63,38 @@ connection.once('open', async () => {
     for (let i = 0; i < friendsCount; i++) {
       const randomIndex = Math.floor(Math.random() * otherUsers.length);
       const friendId = otherUsers[randomIndex]._id;
-      user.friends.push(friendId);
-      // Remove the friend from the list to avoid duplicate friendships
+      const friendUsername = otherUsers[randomIndex].username;
+      user.friends.push({ _id: friendId, username: friendUsername });
       otherUsers.splice(randomIndex, 1);
     }
   }
 
+  for (const user of usersData) {
+    for (const thought of user.thoughts) {
+      const reactionCount = Math.floor(Math.random() * 5);
+      const reactionsData = []; 
+      for (let i = 0; i < reactionCount; i++) {
+        const reactionBody = getRandomReaction();
+        const createdAt = new Date();
+        const randomUserIndex = Math.floor(Math.random() * usersData.length);
+        const randomUser = usersData[randomUserIndex];
+        const reaction = {
+          _id: new mongoose.Types.ObjectId(),
+          reactionBody,
+          username: randomUser.username, 
+          createdAt,
+        };
+        thought.reactions.push(reaction); 
+        reactionsData.push(reaction); 
+      }
+  
+      await Thought.collection.updateOne({ _id: thought._id }, { $push: { reactions: { $each: reactionsData } } });
+    }
+  }
 
   await User.collection.insertMany(usersData);
 
   console.table(usersData);
-  console.info('Seeding complete! 🌱')
+  console.info('Seeding complete! 🌱');
   process.exit(0);
-})
-
+});

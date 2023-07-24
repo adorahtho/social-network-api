@@ -18,12 +18,18 @@ const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Thought' 
     }],
-    friends: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'User' 
-    }
-  ]
+    friends: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User' 
+    }],
+  },
+  {
+    // Use the toObject() method with the transform option
+    toJSON: {
+      transform: function (doc, ret) {
+        delete ret._id; // Remove _id field from the nested objects
+      },
+    },
   }
 )
 
