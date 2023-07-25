@@ -1,7 +1,6 @@
 const connection = require('../config/connection');
 const { User, Thought } = require('../models');
 const { getRandomArrItem, getRandomUsername, getRandomThoughtText, getRandomReaction } = require('./data');
-const mongoose = require('mongoose');
 
 connection.on('error', (err) => console.error('Error connecting to the database:', err));
 
