@@ -28,6 +28,7 @@ The social network api allows users to share thoughts and reactions as well as a
 
 ## Walkthrough Video Link
 
+https://watch.screencastify.com/v/gq5kLcqLSiYn6nLaZ0ef 
 
 ## Author & Contributors
 
